@@ -95,7 +95,6 @@
 #include "utils/selfuncs.h"
 #include "utils/spccache.h"
 #include "utils/tuplesort.h"
-#include "lero/lero_extension.h"
 
 
 #define LOG2(x)  (log(x) / 0.693147180559945)
@@ -107,13 +106,6 @@
  */
 #define APPEND_CPU_COST_MULTIPLIER 0.5
 
-/** Lero Extension */
-#define CARD_EST_QUERY_NUM 30000
-double 		join_card_ests[CARD_EST_QUERY_NUM] = {0.0};
-int         join_est_no = 0;
-int			max_join_est_no = CARD_EST_QUERY_NUM - 1;
-char        *lero_joinest_fname = "";
-/** ==== Lero Extension ==== */
 
 double		seq_page_cost = DEFAULT_SEQ_PAGE_COST;
 double		random_page_cost = DEFAULT_RANDOM_PAGE_COST;
@@ -186,23 +178,6 @@ static double relation_byte_size(double tuples, int width);
 static double page_size(double tuples, int width);
 static double get_parallel_divisor(Path *path);
 
-/** Lero Extension */
-void
-read_from_fspn_join_estimate(const char* filename){
-    FILE* fp = fopen(filename, "r");
-
-    double card_est;
-    int cnt = -1;
-
-    while (fscanf(fp, "%lf", &card_est) == 1){
-		cnt += 1;
-        join_card_ests[cnt] = card_est;
-    }
-
-	max_join_est_no = cnt;
-    fclose(fp);
-}
-/** ==== Lero Extension ==== */
 
 /*
  * clamp_row_est
@@ -4528,10 +4503,6 @@ set_joinrel_size_estimates(PlannerInfo *root, RelOptInfo *rel,
 										   inner_rel->rows,
 										   sjinfo,
 										   restrictlist);
-	if (enable_lero) {
-        lero_pgsysml_set_joinrel_size_estimates(root, rel, outer_rel,
-                                               inner_rel, sjinfo, restrictlist);
-    }
 }
 
 /*
@@ -4723,23 +4694,6 @@ calc_joinrel_size_estimate(PlannerInfo *root,
 			nrows = 0;			/* keep compiler quiet */
 			break;
 	}
-
-	/** Lero extension */
-    if (lero_joinest_fname != NULL && strlen(lero_joinest_fname) > 0) {
-        if (join_est_no == 0) {
-            read_from_fspn_join_estimate(lero_joinest_fname);
-        }
-
-		if (join_est_no <= max_join_est_no) {
-			double join_est = join_card_ests[join_est_no];
-			Assert(join_est >= 0);
-			elog(WARNING, "set card %f", join_est);
-
-			join_est_no++;
-			return clamp_row_est(join_est);
-		}
-    }
-	/** ==== Lero Extension ==== */
 
 	return clamp_row_est(nrows);
 }

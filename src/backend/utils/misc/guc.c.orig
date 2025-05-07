@@ -96,7 +96,6 @@
 #include "utils/tzparser.h"
 #include "utils/varlena.h"
 #include "utils/xml.h"
-#include "lero/lero_extension.h"
 
 #ifndef PG_KRB_SRVTAB
 #define PG_KRB_SRVTAB ""
@@ -1966,16 +1965,6 @@ static struct config_bool ConfigureNamesBool[] =
 		NULL, NULL, NULL
 	},
 
-	{
-		{"enable_lero", PGC_USERSET, UNGROUPED,
-			gettext_noop("Enable Lero."),
-			NULL
-		},
-		&enable_lero,
-		false,
-		NULL, NULL, NULL
-    },
-
 	/* End-of-list marker */
 	{
 		{NULL, 0, 0, NULL, NULL}, NULL, false, NULL, NULL, NULL
@@ -3218,16 +3207,6 @@ static struct config_int ConfigureNamesInt[] =
 		NULL, assign_tcp_user_timeout, show_tcp_user_timeout
 	},
 
-	{
-		{"lero_server_port", PGC_USERSET, UNGROUPED,
-			gettext_noop("Sets the port of Lero server."),
-			NULL
-		},
-		&lero_server_port,
-		14567, 0, 65535,
-		NULL, NULL, NULL
-    },
-
 	/* End-of-list marker */
 	{
 		{NULL, 0, 0, NULL, NULL}, NULL, 0, 0, 0, NULL, NULL, NULL
@@ -4243,28 +4222,6 @@ static struct config_string ConfigureNamesString[] =
 		"",
 		check_restrict_nonsystem_relation_kind, assign_restrict_nonsystem_relation_kind, NULL
 	},
-
-	{
-		{"lero_joinest_fname", PGC_USERSET, UNGROUPED,
-				gettext_noop("Sets the file name of ML-based join size estimation."),
-				NULL,
-				GUC_IS_NAME
-		},
-		&lero_joinest_fname,
-		"",
-		check_cluster_name, NULL, NULL
-    },
-
-	{
-		{"lero_server_host", PGC_USERSET, UNGROUPED,
-				gettext_noop("Sets the host of Lero server."),
-				NULL,
-				GUC_IS_NAME
-		},
-		&lero_server_host,
-		"localhost",
-		check_cluster_name, NULL, NULL
-    },	
 
 	/* End-of-list marker */
 	{

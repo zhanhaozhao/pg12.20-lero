@@ -64,7 +64,6 @@
 #include "utils/selfuncs.h"
 #include "utils/lsyscache.h"
 #include "utils/syscache.h"
-#include "lero/lero_extension.h"
 
 
 /* GUC parameters */
@@ -266,30 +265,19 @@ static int	common_prefix_cmp(const void *a, const void *b);
  *
  *****************************************************************************/
 PlannedStmt *
-planner(Query *parse, const char *query_string, int cursorOptions, ParamListInfo boundParams)
+planner(Query *parse, int cursorOptions, ParamListInfo boundParams)
 {
 	PlannedStmt *result;
 
-	// if (planner_hook)
-	// 	result = (*planner_hook) (parse, cursorOptions, boundParams);
-	// else
-	// 	result = standard_planner(parse, cursorOptions, boundParams);
-
 	if (planner_hook)
-		result = (*planner_hook) (parse, query_string, cursorOptions, boundParams);
-	else {
-		if (enable_lero) {
-			result = lero_pgsysml_hook_planner(parse, query_string, cursorOptions, boundParams);
-		} else{
-			result = standard_planner(parse, query_string, cursorOptions, boundParams);
-		}
-	}
-
+		result = (*planner_hook) (parse, cursorOptions, boundParams);
+	else
+		result = standard_planner(parse, cursorOptions, boundParams);
 	return result;
 }
 
 PlannedStmt *
-standard_planner(Query *parse, const char *query_string, int cursorOptions, ParamListInfo boundParams)
+standard_planner(Query *parse, int cursorOptions, ParamListInfo boundParams)
 {
 	PlannedStmt *result;
 	PlannerGlobal *glob;

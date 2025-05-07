@@ -23,7 +23,7 @@
 
 
 /* Hook for plugins to get control in planner() */
-typedef PlannedStmt *(*planner_hook_type) (Query *parse,
+typedef PlannedStmt *(*planner_hook_type) (Query *parse, const char *query_string,
 										   int cursorOptions,
 										   ParamListInfo boundParams);
 extern PGDLLIMPORT planner_hook_type planner_hook;
@@ -37,8 +37,8 @@ typedef void (*create_upper_paths_hook_type) (PlannerInfo *root,
 extern PGDLLIMPORT create_upper_paths_hook_type create_upper_paths_hook;
 
 
-extern PlannedStmt *standard_planner(Query *parse, int cursorOptions,
-									 ParamListInfo boundParams);
+extern PlannedStmt *standard_planner(Query *parse, const char *query_string, 
+									 int cursorOptions, ParamListInfo boundParams);
 
 extern PlannerInfo *subquery_planner(PlannerGlobal *glob, Query *parse,
 									 PlannerInfo *parent_root,

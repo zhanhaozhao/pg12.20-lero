@@ -1,0 +1,18 @@
+--- src/backend/optimizer/plan/planner.c
++++ src/backend/optimizer/plan/planner.c
+@@ -272,8 +273,13 @@ planner(Query *parse, const char *query_string, int cursorOptions,
+ 
+ 	if (planner_hook)
+ 		result = (*planner_hook) (parse, query_string, cursorOptions, boundParams);
+-	else
+-		result = standard_planner(parse, query_string, cursorOptions, boundParams);
++	else {
++		if (enable_lero) {
++			result = lero_pgsysml_hook_planner(parse, query_string, cursorOptions, boundParams);
++		} else{
++			result = standard_planner(parse, query_string, cursorOptions, boundParams);
++		}
++	}
+ 	return result;
+ }
+ 
