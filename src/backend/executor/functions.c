@@ -511,6 +511,7 @@ init_execution_state(List *queryTree_list,
 			}
 			else
 				stmt = pg_plan_query(queryTree,
+									 fcache->src,
 									 CURSOR_OPT_PARALLEL_OK,
 									 NULL);
 
