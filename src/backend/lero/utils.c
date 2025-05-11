@@ -262,6 +262,11 @@ plan_to_json(PlannedStmt* stmt, Plan *plan, yyjson_mut_doc *json_doc)
 			yyjson_mut_val *limit_input = plan_to_json(stmt, plan->lefttree, json_doc);
             yyjson_mut_arr_append(inputs, limit_input);
 			break;
+		case T_Gather:
+			op_name = "Gather";
+			yyjson_mut_val *gather_input = plan_to_json(stmt, plan->lefttree, json_doc);
+            yyjson_mut_arr_append(inputs, gather_input);
+			break;
 		case T_SampleScan:
 		case T_TidScan:
 		case T_SubqueryScan:
@@ -278,7 +283,6 @@ plan_to_json(PlannedStmt* stmt, Plan *plan, yyjson_mut_doc *json_doc)
 		case T_Result:
 		case T_ProjectSet:
 		case T_Unique:
-		case T_Gather:
 		case T_Group:
 		case T_WindowAgg:
 		case T_RecursiveUnion:
@@ -350,6 +354,10 @@ add_join_input_tables(PlannerInfo *root, Path *path, RelatedTable *related_table
 			AggPath *agg_path = (AggPath *) path;
 			add_join_input_tables(root, agg_path->subpath, related_table);
 			break;
+		case T_Gather:;
+			GatherPath *gather_path = (GatherPath *) path;
+			add_join_input_tables(root, gather_path->subpath, related_table);
+			break;
 		case T_SampleScan:
 		case T_TidScan:
 		case T_SubqueryScan:
@@ -366,7 +374,6 @@ add_join_input_tables(PlannerInfo *root, Path *path, RelatedTable *related_table
 		case T_Result:
 		case T_ProjectSet:
 		case T_Unique:
-		case T_Gather:
 		case T_Group:
 		case T_WindowAgg:
 		case T_RecursiveUnion:
