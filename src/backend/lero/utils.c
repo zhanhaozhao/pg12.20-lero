@@ -267,6 +267,11 @@ plan_to_json(PlannedStmt* stmt, Plan *plan, yyjson_mut_doc *json_doc)
 			yyjson_mut_val *gather_input = plan_to_json(stmt, plan->lefttree, json_doc);
             yyjson_mut_arr_append(inputs, gather_input);
 			break;
+		case T_GatherMerge:
+			op_name = "GatherMerge";
+			yyjson_mut_val *gathermerge_input = plan_to_json(stmt, plan->lefttree, json_doc);
+			yyjson_mut_arr_append(inputs, gathermerge_input);
+			break;
 		case T_SampleScan:
 		case T_TidScan:
 		case T_SubqueryScan:
@@ -288,7 +293,6 @@ plan_to_json(PlannedStmt* stmt, Plan *plan, yyjson_mut_doc *json_doc)
 		case T_RecursiveUnion:
 		case T_LockRows:
 		case T_ModifyTable:
-		case T_GatherMerge:
 			elog(WARNING, "unrecognized node type: %d",
 				 (int) plan->type);
 			break;
@@ -358,6 +362,10 @@ add_join_input_tables(PlannerInfo *root, Path *path, RelatedTable *related_table
 			GatherPath *gather_path = (GatherPath *) path;
 			add_join_input_tables(root, gather_path->subpath, related_table);
 			break;
+		case T_GatherMerge:;
+			GatherMergePath *gathermerge_path = (GatherMergePath *) path;
+			add_join_input_tables(root, gathermerge_path->subpath, related_table);
+			break;
 		case T_SampleScan:
 		case T_TidScan:
 		case T_SubqueryScan:
@@ -380,7 +388,6 @@ add_join_input_tables(PlannerInfo *root, Path *path, RelatedTable *related_table
 		case T_LockRows:
 		case T_ModifyTable:
 		case T_Limit:
-		case T_GatherMerge:
 			elog(WARNING, "unrecognized node type: %d",
 				 (int) path->pathtype);
 			break;
