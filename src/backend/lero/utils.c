@@ -15,6 +15,7 @@
 #include "nodes/pathnodes.h"
 #include "miscadmin.h"
 #include "parser/parsetree.h"
+#include "utils/memutils.h"
 
 #define MSG_SIZE 524288
 #define SOCKET_ERR -1
@@ -349,7 +350,11 @@ add_join_input_tables(PlannerInfo *root, Path *path, RelatedTable *related_table
 				break;
 			}
  			char *table_name = get_rel_name(root->simple_rte_array[table_relid]->relid);
-			related_table->tables = lappend(related_table->tables, table_name);
+			if (table_name != NULL) {
+				MemoryContext oldctx = MemoryContextSwitchTo(TopMemoryContext);
+				related_table->tables = lappend(related_table->tables, pstrdup(table_name));
+				MemoryContextSwitchTo(oldctx);
+			}
             break;
 		case T_BitmapIndexScan:;
 			/* BitmapIndexScan doesn't directly scan a table - it's a child of BitmapHeapScan.

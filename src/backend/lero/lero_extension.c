@@ -69,8 +69,10 @@ void lero_pgsysml_set_joinrel_size_estimates(PlannerInfo *root, RelOptInfo *rel,
 		rows = rel->rows;
 		original_card_list[join_card_num] = rows;
 
-		/* Use palloc0 to ensure tables is zeroed */
+		/* Allocate in TopMemoryContext so the list survives planner context reset */
+		MemoryContext oldctx = MemoryContextSwitchTo(TopMemoryContext);
 		RelatedTable *related_table = (RelatedTable *) palloc0(sizeof(RelatedTable));
+		MemoryContextSwitchTo(oldctx);
 
 		/* Add NULL checks before recursing into paths */
 		if (outer_rel->cheapest_total_path != NULL) {
@@ -209,9 +211,15 @@ void send_default_rows(const char *queryString)
 	}
 
 	yyjson_mut_val *table_arr = yyjson_mut_arr(json_doc);
+	elog(WARNING, "LERO_TRACE send_default_rows: join_card_num=%d", join_card_num);
 	for (int i = 0; i < join_card_num; i++) {
 		yyjson_mut_val *arr = yyjson_mut_arr(json_doc);
 		RelatedTable *related_table = join_input_tables[i];
+		/* Debug trace for first few entries */
+		if (i < 5) {
+			elog(WARNING, "LERO_TRACE read: i=%d, related_table=%p, tables=%p",
+				 i, (void*)related_table, (void*)related_table->tables);
+		}
 		ListCell   *lc;
 		foreach(lc, related_table->tables) {
 			char* table_name = (char *) lfirst(lc);
