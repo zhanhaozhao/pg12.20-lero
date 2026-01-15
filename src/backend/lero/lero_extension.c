@@ -74,12 +74,23 @@ void lero_pgsysml_set_joinrel_size_estimates(PlannerInfo *root, RelOptInfo *rel,
 		RelatedTable *related_table = (RelatedTable *) palloc0(sizeof(RelatedTable));
 		MemoryContextSwitchTo(oldctx);
 
-		/* Add NULL checks before recursing into paths */
-		if (outer_rel->cheapest_total_path != NULL) {
-			add_join_input_tables(root, outer_rel->cheapest_total_path, related_table);
-		}
-		if (inner_rel->cheapest_total_path != NULL) {
-			add_join_input_tables(root, inner_rel->cheapest_total_path, related_table);
+		/* Collect base relations directly from relids to avoid missing path types */
+		Bitmapset *relids = rel->relids;
+		int relid = -1;
+		while ((relid = bms_next_member(relids, relid)) >= 0) {
+			if (relid <= 0 || relid >= root->simple_rel_array_size) {
+				continue;
+			}
+			RangeTblEntry *rte = root->simple_rte_array[relid];
+			if (rte == NULL) {
+				continue;
+			}
+			char *table_name = get_rel_name(rte->relid);
+			if (table_name != NULL) {
+				MemoryContext oldctx = MemoryContextSwitchTo(TopMemoryContext);
+				related_table->tables = lappend(related_table->tables, pstrdup(table_name));
+				MemoryContextSwitchTo(oldctx);
+			}
 		}
 
 		/* Always log for first few entries to debug */
