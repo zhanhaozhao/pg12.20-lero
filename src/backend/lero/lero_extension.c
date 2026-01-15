@@ -7,6 +7,7 @@
 #include "optimizer/paths.h"
 #include "partitioning/partbounds.h"
 #include "nodes/bitmapset.h"
+#include "parser/parsetree.h"
 #include "utils/memutils.h"
 #include "lero/utils.h"
 #include "lero/yyjson.h"
@@ -83,6 +84,9 @@ void lero_pgsysml_set_joinrel_size_estimates(PlannerInfo *root, RelOptInfo *rel,
 			}
 			RangeTblEntry *rte = root->simple_rte_array[relid];
 			if (rte == NULL) {
+				continue;
+			}
+			if (rte->rtekind != RTE_RELATION || !OidIsValid(rte->relid)) {
 				continue;
 			}
 			char *table_name = get_rel_name(rte->relid);
