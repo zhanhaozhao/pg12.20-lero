@@ -72,35 +72,18 @@ void lero_pgsysml_set_joinrel_size_estimates(PlannerInfo *root, RelOptInfo *rel,
 		/* Use palloc0 to ensure tables is zeroed */
 		RelatedTable *related_table = (RelatedTable *) palloc0(sizeof(RelatedTable));
 
-		/* Debug: verify palloc0 zeroed the memory */
-		if (related_table->tables != NIL) {
-			elog(WARNING, "lero DEBUG: palloc0 did NOT zero tables! join_card_num=%d, tables=%p",
-				 join_card_num, (void*)related_table->tables);
-		}
-
 		/* Add NULL checks before recursing into paths */
 		if (outer_rel->cheapest_total_path != NULL) {
 			add_join_input_tables(root, outer_rel->cheapest_total_path, related_table);
 		}
-
-		/* Debug: check after outer path */
-		if (related_table->tables != NIL &&
-			((uintptr_t)related_table->tables & 0xFFFFFFFF00000000ULL) == 0x100000000ULL) {
-			elog(WARNING, "lero DEBUG: corruption after outer_path! join_card_num=%d, tables=%p",
-				 join_card_num, (void*)related_table->tables);
-		}
-
 		if (inner_rel->cheapest_total_path != NULL) {
 			add_join_input_tables(root, inner_rel->cheapest_total_path, related_table);
 		}
 
-		/* Debug: check after inner path */
-		if (related_table->tables != NIL &&
-			((uintptr_t)related_table->tables & 0xFFFFFFFF00000000ULL) == 0x100000000ULL) {
-			elog(WARNING, "lero DEBUG: corruption after inner_path! join_card_num=%d, tables=%p, outer_type=%d, inner_type=%d",
-				 join_card_num, (void*)related_table->tables,
-				 outer_rel->cheapest_total_path ? outer_rel->cheapest_total_path->pathtype : -1,
-				 inner_rel->cheapest_total_path ? inner_rel->cheapest_total_path->pathtype : -1);
+		/* Always log for first few entries to debug */
+		if (join_card_num < 5) {
+			elog(WARNING, "LERO_TRACE: join_card_num=%d, related_table=%p, tables=%p",
+				 join_card_num, (void*)related_table, (void*)related_table->tables);
 		}
 
 		join_input_tables[join_card_num] = related_table;
