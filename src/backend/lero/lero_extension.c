@@ -82,12 +82,6 @@ void lero_pgsysml_set_joinrel_size_estimates(PlannerInfo *root, RelOptInfo *rel,
 			add_join_input_tables(root, inner_rel->cheapest_total_path, related_table);
 		}
 
-		/* Always log for first few entries to debug */
-		if (join_card_num < 5) {
-			elog(WARNING, "LERO_TRACE: join_card_num=%d, related_table=%p, tables=%p",
-				 join_card_num, (void*)related_table, (void*)related_table->tables);
-		}
-
 		join_input_tables[join_card_num] = related_table;
 		join_card_num += 1;
 	}
@@ -211,15 +205,9 @@ void send_default_rows(const char *queryString)
 	}
 
 	yyjson_mut_val *table_arr = yyjson_mut_arr(json_doc);
-	elog(WARNING, "LERO_TRACE send_default_rows: join_card_num=%d", join_card_num);
 	for (int i = 0; i < join_card_num; i++) {
 		yyjson_mut_val *arr = yyjson_mut_arr(json_doc);
 		RelatedTable *related_table = join_input_tables[i];
-		/* Debug trace for first few entries */
-		if (i < 5) {
-			elog(WARNING, "LERO_TRACE read: i=%d, related_table=%p, tables=%p",
-				 i, (void*)related_table, (void*)related_table->tables);
-		}
 		ListCell   *lc;
 		foreach(lc, related_table->tables) {
 			char* table_name = (char *) lfirst(lc);
@@ -290,10 +278,6 @@ double predict_plan_score(yyjson_mut_doc *json_doc, yyjson_mut_val *json_root, i
 
 	if (msg_char == NULL || strcmp(msg_char, MSG_ERROR) == 0)
 	{
-		/* Log the full response for debugging */
-		char *response_str = yyjson_write(msg_doc, 0, NULL);
-		elog(WARNING, "Lero server error response: %s", response_str ? response_str : "(null)");
-		if (response_str) free(response_str);
 		yyjson_doc_free(msg_doc);
 		close(conn_fd);
 		elog(ERROR, "fail to get score from Lero");
