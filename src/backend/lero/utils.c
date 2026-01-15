@@ -324,19 +324,37 @@ plan_to_json(PlannedStmt* stmt, Plan *plan, yyjson_mut_doc *json_doc)
     return op;
 }
 
-void 
+void
 add_join_input_tables(PlannerInfo *root, Path *path, RelatedTable *related_table)
 {
+	/* Defensive NULL check */
+	if (path == NULL) {
+		elog(WARNING, "add_join_input_tables: NULL path");
+		return;
+	}
+
 	switch (path->pathtype)
 	{
 		case T_SeqScan:
 		case T_IndexScan:
 		case T_IndexOnlyScan:
 		case T_BitmapHeapScan:;
+			if (path->parent == NULL) {
+				elog(WARNING, "add_join_input_tables: NULL path->parent for type %d", path->pathtype);
+				break;
+			}
 			Index table_relid = path->parent->relid;
+			if (table_relid <= 0 || table_relid >= root->simple_rel_array_size) {
+				elog(WARNING, "add_join_input_tables: invalid relid %d", table_relid);
+				break;
+			}
  			char *table_name = get_rel_name(root->simple_rte_array[table_relid]->relid);
 			related_table->tables = lappend(related_table->tables, table_name);
             break;
+		case T_BitmapIndexScan:;
+			/* BitmapIndexScan doesn't directly scan a table - it's a child of BitmapHeapScan.
+			 * The table info is captured by the parent BitmapHeapScan, so we just return here. */
+			break;
 		case T_HashJoin:
 		case T_MergeJoin:
 		case T_NestLoop:;
@@ -366,6 +384,10 @@ add_join_input_tables(PlannerInfo *root, Path *path, RelatedTable *related_table
 			GatherMergePath *gathermerge_path = (GatherMergePath *) path;
 			add_join_input_tables(root, gathermerge_path->subpath, related_table);
 			break;
+		case T_Unique:;
+			UniquePath *unique_path = (UniquePath *) path;
+			add_join_input_tables(root, unique_path->subpath, related_table);
+			break;
 		case T_SampleScan:
 		case T_TidScan:
 		case T_SubqueryScan:
@@ -381,7 +403,6 @@ add_join_input_tables(PlannerInfo *root, Path *path, RelatedTable *related_table
 		case T_MergeAppend:
 		case T_Result:
 		case T_ProjectSet:
-		case T_Unique:
 		case T_Group:
 		case T_WindowAgg:
 		case T_RecursiveUnion:

@@ -69,10 +69,26 @@ void lero_pgsysml_set_joinrel_size_estimates(PlannerInfo *root, RelOptInfo *rel,
 		rows = rel->rows;
 		original_card_list[join_card_num] = rows;
 
-		RelatedTable *related_table = (RelatedTable *) palloc(sizeof(RelatedTable));
-		related_table->tables = NIL;
-		add_join_input_tables(root, outer_rel->cheapest_total_path, related_table);
-		add_join_input_tables(root, inner_rel->cheapest_total_path, related_table);
+		/* Use palloc0 to ensure tables is zeroed */
+		RelatedTable *related_table = (RelatedTable *) palloc0(sizeof(RelatedTable));
+		/* related_table->tables is now NIL (0) from palloc0 */
+
+		/* Add NULL checks before recursing into paths */
+		if (outer_rel->cheapest_total_path != NULL) {
+			add_join_input_tables(root, outer_rel->cheapest_total_path, related_table);
+		}
+		if (inner_rel->cheapest_total_path != NULL) {
+			add_join_input_tables(root, inner_rel->cheapest_total_path, related_table);
+		}
+
+		/* Verify tables pointer is valid (NIL or a real List) before storing */
+		if (related_table->tables != NIL &&
+			(related_table->tables->type != T_List)) {
+			elog(WARNING, "lero: corrupted tables list detected at join_card_num=%d, tables=%p, resetting to NIL",
+				 join_card_num, (void*)related_table->tables);
+			related_table->tables = NIL;
+		}
+
 		join_input_tables[join_card_num] = related_table;
 		join_card_num += 1;
 	}
