@@ -273,6 +273,11 @@ plan_to_json(PlannedStmt* stmt, Plan *plan, yyjson_mut_doc *json_doc)
 			yyjson_mut_val *gathermerge_input = plan_to_json(stmt, plan->lefttree, json_doc);
 			yyjson_mut_arr_append(inputs, gathermerge_input);
 			break;
+		case T_Unique:
+			op_name = "Unique";
+			yyjson_mut_val *unique_input = plan_to_json(stmt, plan->lefttree, json_doc);
+			yyjson_mut_arr_append(inputs, unique_input);
+			break;
 		case T_SampleScan:
 		case T_TidScan:
 		case T_SubqueryScan:
@@ -288,7 +293,6 @@ plan_to_json(PlannedStmt* stmt, Plan *plan, yyjson_mut_doc *json_doc)
 		case T_MergeAppend:
 		case T_Result:
 		case T_ProjectSet:
-		case T_Unique:
 		case T_Group:
 		case T_WindowAgg:
 		case T_RecursiveUnion:
